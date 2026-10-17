@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizForge — Custom Quiz Maker</title>
+<style>
+:root{--bg:#0b1020;--panel:#151d33;--panel2:#1d2945;--text:#f3f6ff;--muted:#aab6d3;--accent:#72f2c2;--accent2:#8ba7ff;--danger:#ff8494}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1c2c50 0,#0b1020 58%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+header{padding:28px 18px 12px;text-align:center}h1{margin:0;font-size:clamp(2rem,5vw,3.3rem);letter-spacing:-1.5px}h1 span{color:var(--accent)}header p{color:var(--muted);margin:8px 0}
+main{width:min(1050px,94%);margin:18px auto 50px;display:grid;grid-template-columns:320px 1fr;gap:18px}.panel{background:rgba(21,29,51,.94);border:1px solid #344261;border-radius:20px;padding:20px;box-shadow:0 16px 45px #0003}h2{font-size:1.1rem;margin:0 0 14px}label{display:block;font-size:.9rem;color:var(--muted);margin:13px 0 6px}input,select,textarea{width:100%;background:#0d1427;color:var(--text);border:1px solid #3b4a6d;border-radius:10px;padding:11px;font:inherit}textarea{min-height:90px;resize:vertical}button{border:0;border-radius:11px;padding:11px 15px;font:inherit;font-weight:750;cursor:pointer;transition:transform .15s,opacity .15s}button:hover{transform:translateY(-1px)}.primary{background:var(--accent);color:#08251e;width:100%;margin-top:16px}.secondary{background:var(--panel2);color:var(--text);border:1px solid #405177}.row{display:flex;gap:9px}.row>*{flex:1}.hint{color:var(--muted);font-size:.82rem;line-height:1.5}.pill{display:inline-block;background:#263654;color:var(--accent);border-radius:99px;padding:5px 9px;font-size:.75rem;font-weight:700}.quiz-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.progress{height:7px;background:#0c1426;border-radius:99px;overflow:hidden;margin:15px 0 22px}.progress div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .25s}.question{font-size:1.25rem;font-weight:750;line-height:1.4;margin:20px 0}.answers{display:grid;gap:10px}.answer{width:100%;text-align:left;background:#1b2742;color:var(--text);border:1px solid #3b4a6d;display:flex;align-items:center;gap:11px}.answer .letter{display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;border-radius:9px;background:#2b3a5c}.answer.selected{border-color:var(--accent);background:#193d3a}.answer.correct{border-color:var(--accent);background:#143b34}.answer.wrong{border-color:var(--danger);background:#482534}.feedback{margin-top:14px;color:var(--muted);line-height:1.5}.actions{display:flex;gap:10px;margin-top:20px}.actions button{flex:1}.hide{display:none!important}.empty{text-align:center;padding:45px 10px;color:var(--muted)}.empty .big{font-size:3rem}.score{font-size:2.5rem;font-weight:850;color:var(--accent)}.tiny{font-size:.8rem;color:var(--muted)}footer{text-align:center;color:#8390ae;padding:0 15px 30px;font-size:.8rem}
+@media(max-width:760px){main{grid-template-columns:1fr}.panel{padding:17px}header{padding-top:22px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Quiz<span>Forge</span> ✦</h1>
+  <p>Customize it. Create it. Challenge yourself.</p>
+</header>
+<main>
+  <aside class="panel">
+    <h2>⚙️ Build your quiz</h2>
+    <label for="quizTitle">Quiz website / title</label>
+    <input id="quizTitle" value="My Awesome Quiz" maxlength="70">
+    <label for="topic">Topic</label>
+    <input id="topic" value="General Knowledge" maxlength="100" placeholder="e.g. Minecraft, Science, SATs">
+    <div class="row">
+      <div><label for="count">Number of questions</label><select id="count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div>
+      <div><label for="difficulty">Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
+    </div>
+    <label for="theme">Colour theme</label>
+    <select id="theme"><option value="mint">Neon mint</option><option value="blue">Electric blue</option><option value="purple">Purple galaxy</option><option value="fire">Fire mode</option><option value="light">Clean light</option></select>
+    <label for="mode">Quiz style</label>
+    <select id="mode"><option value="choice">Multiple choice</option><option value="tf">True or false</option><option value="mixed">Mixed questions</option></select>
+    <label for="customQuestions">Add your own questions (optional)</label>
+    <textarea id="customQuestions" placeholder="One question per line, format: Question | Answer | Wrong answer 1 | Wrong answer 2 | Wrong answer 3&#10;Example: 5 × 6 = ? | 30 | 25 | 35 | 11"></textarea>
+    <p class="hint">Custom questions are used exactly as you enter them. If you leave this box empty, the demo quiz generator creates sample questions for your topic. It doesn't use an AI service, so sample questions may not match every topic.</p>
+    <button class="primary" id="createBtn">✨ Create my quiz</button>
+    <button class="secondary" id="resetBtn" style="width:100%;margin-top:9px">Reset answers</button>
+  </aside>
+  <section class="panel">
+    <div id="quizArea">
+      <div class="empty"><div class="big">🧠</div><h2>Your quiz will appear here</h2><p>Choose your settings, then press <b>Create my quiz</b>.</p></div>
+    </div>
+  </section>
+</main>
+<footer>QuizForge • A single-file quiz maker for GitHub Pages</footer>
+<script>
+const $=id=>document.getElementById(id);
+let quiz=[],index=0,answers={},checked=false;
+const themes={
+ mint:['#0b1020','#151d33','#f3f6ff','#72f2c2','#8ba7ff'],
+ blue:['#081525','#122942','#f1f7ff','#58c7ff','#8ba7ff'],
+ purple:['#130d24','#24163b','#fff5ff','#e3a5ff','#9e9bff'],
+ fire:['#1b0b0b','#301515','#fff6ee','#ffb454','#ff6f61'],
+ light:['#edf2f9','#ffffff','#17233c','#087f8c','#4867d6']
+};
+function applyTheme(){const t=themes[$('theme').value]||themes.mint;document.documentElement.style.setProperty('--bg',t[0]);document.documentElement.style.setProperty('--panel',t[1]);document.documentElement.style.setProperty('--text',t[2]);document.documentElement.style.setProperty('--accent',t[3]);document.documentElement.style.setProperty('--accent2',t[4]);if($('theme').value==='light'){document.documentElement.style.setProperty('--muted','#52617b');document.documentElement.style.setProperty('--panel2','#e6edf8')}else{document.documentElement.style.setProperty('--muted','#aab6d3');document.documentElement.style.setProperty('--panel2','#1d2945')}document.body.style.background=`radial-gradient(ellipse at top, ${t[1]} 0, ${t[0]} 70%)`;document.querySelectorAll('.panel').forEach(p=>p.style.background=t[1]+'f2');}
+function shuffle(a){return a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+function parseCustom(){
+ return $('customQuestions').value.split('\n').map(s=>s.trim()).filter(Boolean).map((line,i)=>{
+  const p=line.split('|').map(x=>x.trim());
+  if(p.length<2||!p[0]||!p[1])return null;
+  return {q:p[0],opts:shuffle([p[1],...p.slice(2).filter(Boolean)].slice(0,4)),answer:p[1]};
+ }).filter(Boolean);
+}
+function sampleQuestions(topic,count,difficulty,mode){
+ const t=topic.toLowerCase(),out=[];
+ const banks={
+  'general knowledge':[
+   ['Which planet is known as the Red Planet?','Mars',['Venus','Jupiter','Mercury']],
+   ['How many sides does a hexagon have?','6',['5','7','8']],
+   ['Which ocean is the largest?','Pacific Ocean',['Atlantic Ocean','Indian Ocean','Arctic Ocean']],
+   ['What is the chemical symbol for water?','H₂O',['CO₂','O₂','NaCl']],
+   ['Which animal is a mammal?','Dolphin',['Shark','Trout','Octopus']],
+   ['How many minutes are in 2 hours?','120',['100','90','180']],
+   ['Which direction does the Sun appear to rise from?','East',['West','North','South']],
+   ['What is the largest land animal?','African elephant',['Giraffe','Hippopotamus','Rhinoceros']],
+   ['Which gas do plants absorb during photosynthesis?','Carbon dioxide',['Oxygen','Helium','Hydrogen']],
+   ['How many colours are traditionally named in a rainbow?','7',['5','6','8']]
+  ],
+  'maths':[
+   ['What is 7 × 8?','56',['54','48','64']],
+   ['What is 144 ÷ 12?','12',['10','11','14']],
+   ['What is 3/4 of 20?','15',['12','16','10']],
+   ['What is 25% of 80?','20',['15','25','40']],
+   ['What is 2.5 + 1.75?','4.25',['3.25','4.15','4.5']],
+   ['What is the area of a rectangle 6 cm by 4 cm?','24 cm²',['10 cm²','20 cm²','28 cm²']],
+   ['What is 999 + 101?','1,100',['1,000','1,010','1,101']],
+   ['What is 2/3 of 18?','12',['6','9','15']],
+   ['What is 3.6 × 10?','36',['3.6','360','0.36']],
+   ['What is 1,000 − 467?','533',['543','523','633']]
+  ],
+  'science':[
+   ['Which organ pumps blood around the human body?','Heart',['Lungs','Brain','Stomach']],
+   ['What force pulls objects towards Earth?','Gravity',['Friction','Magnetism','Buoyancy']],
+   ['Which state of matter has a fixed volume but no fixed shape?','Liquid',['Solid','Gas','Plasma']],
+   ['What do plants mainly absorb through their roots?','Water and minerals',['Oxygen only','Sunlight','Seeds']],
+   ['Which planet is closest to the Sun?','Mercury',['Venus','Earth','Mars']],
+   ['What is the process by which plants make food using light?','Photosynthesis',['Respiration','Evaporation','Condensation']],
+   ['Which material is usually attracted to a magnet?','Iron',['Copper','Plastic','Glass']],
+   ['What is the main gas in Earth’s atmosphere?','Nitrogen',['Oxygen','Carbon dioxide','Hydrogen']],
+   ['Which part of a plant takes in most water from soil?','Roots',['Flowers','Fruit','Leaves']],
+   ['At what temperature does pure water freeze at standard pressure?','0°C',['10°C','32°C','100°C']]
+  ],
+  'minecraft':[
+   ['Which tool is best suited to mine stone quickly?','Pickaxe',['Shovel','Hoe','Fishing rod']],
+   ['Which dimension contains the Ender Dragon?','The End',['The Nether','The Overworld','The Deep Dark']],
+   ['What do you usually need to light a Nether portal?','Flint and steel',['A water bucket','A bow','A compass']],
+   ['Which mob explodes near players?','Creeper',['Zombie','Cow','Villager']],
+   ['What material is used to craft a crafting table?','Wooden planks',['Cobblestone','Iron ingots','Glass']],
+   ['Which item helps you breathe underwater?','Turtle shell helmet',['Saddle','Shield','Compass']],
+   ['What do you use to tame a wolf?','Bones',['Wheat','Carrots','Seeds']],
+   ['Which ore gives diamonds when mined with a suitable pickaxe?','Diamond ore',['Coal ore','Copper ore','Lapis lazuli ore']],
+   ['Which dimension is known for lava seas and fortresses?','The Nether',['The End','The Overworld','A village']],
+   ['What does a bed normally set in the Overworld?','Your respawn point',['Your world seed','Your game mode','Your coordinates']]
+  ],
+  'english':[
+   ['Which word is an adjective in “the bright star shone”?','bright',['star','shone','the']],
+   ['Which punctuation mark ends a direct question?','Question mark (?)',['Comma (,)','Colon (:)','Apostrophe (’ )']],
+   ['What is the plural of “child”?','children',['childs','childes','childrens']],
+   ['Which word is a synonym for “enormous”?','huge',['tiny','narrow','quiet']],
+   ['Which word is a verb in “Birds fly south”?','fly',['Birds','south','the']],
+   ['Which sentence uses an apostrophe correctly?','The dog’s bowl is full.',['The dogs bowl is full.','The dogs’ bowl is full. (one dog)','The dog,s bowl is full.']],
+   ['What is the past tense of “teach”?','taught',['teached','teaching','teaches']],
+   ['Which is a fronted adverbial?','Before sunrise,',['The small bird','A blue sky','ran quickly']],
+   ['Which word is a conjunction?','although',['beautiful','slowly','garden']],
+   ['Which is a complete sentence?','The children played outside.',['Because it was raining.','Running through the park.','When the bell rang.']]
+  ]
+ };
+ let key=Object.keys(banks).find(k=>t.includes(k));
+ if(!key)key='general knowledge';
+ let bank=banks[key].slice();
+ if(difficulty==='Hard')bank=bank.slice().reverse();
+ else if(difficulty==='Easy')bank=bank.slice(0,8);
+ for(let i=0;i<count;i++){
+  const item=bank[i%bank.length],tf=mode==='tf'||(mode==='mixed'&&i%3===2);
+  if(tf){const truth=i%2===0;out.push({q:truth?item[0]+' (True or false?)':`True or false: ${item[0]} The answer is ${item[1]==='Mars'?'Venus':'incorrect'}.`,opts:['True','False'],answer:truth?'True':'False'});}
+  else out.push({q:item[0],opts:shuffle([item[1],...item[2]]),answer:item[1]});
+ }
+ return out;
+}
+function createQuiz(){
+ applyTheme();
+ const count=Number($('count').value),custom=parseCustom();
+ quiz=custom.length?custom.slice(0,count).map(x=>({q:x.q,opts:x.opts,answer:x.answer})):sampleQuestions($('topic').value||'General Knowledge',count,$('difficulty').value,$('mode').value);
+ if(!quiz.length){$('quizArea').innerHTML='<div class="empty"><h2>No valid questions found</h2><p>Enter at least one line like: Question | Correct answer | Wrong answer 1 | Wrong answer 2 | Wrong answer 3</p></div>';return;}
+ index=0;answers={};checked=false;render();
+}
+function render(){
+ const area=$('quizArea');
+ if(index>=quiz.length){const score=quiz.reduce((s,q,i)=>s+(answers[i]===q.answer?1:0),0);area.innerHTML=`<div class="empty"><span class="pill">QUIZ COMPLETE</span><div class="score">${score} / ${quiz.length}</div><h2>${score===quiz.length?'Perfect score!':score/quiz.length>=.7?'Great work!':'Keep practising!'}</h2><p>You scored ${Math.round(score/quiz.length*100)}% on <b>${escapeHtml($('quizTitle').value)}</b>.</p><button class="primary" onclick="createQuiz()">Try again</button></div>`;return;}
+ const q=quiz[index],selected=answers[index];
+ area.innerHTML=`<div class="quiz-top"><span class="pill">${escapeHtml($('topic').value||'CUSTOM QUIZ')}</span><span class="tiny">Question ${index+1} of ${quiz.length}</span></div><div class="progress"><div style="width:${index/quiz.length*100}%"></div></div><div class="question">${escapeHtml(q.q)}</div><div class="answers">${q.opts.map((o,i)=>{let cls='answer';if(checked&&o===q.answer)cls+=' correct';else if(checked&&o===selected&&selected!==q.answer)cls+=' wrong';else if(o===selected)cls+=' selected';return `<button class="${cls}" ${checked?'disabled':''} onclick="chooseAnswer(${JSON.stringify(o).replace(/"/g,'&quot;')})"><span class="letter">${String.fromCharCode(65+i)}</span><span>${escapeHtml(o)}</span></button>`}).join('')}</div><div id="feedback" class="feedback">${checked?(selected===q.answer?'✅ Correct!':'❌ Not quite. Correct answer: '+escapeHtml(q.answer)):'Choose an answer, then check it.'}</div><div class="actions">${!checked?'<button class="primary" onclick="checkAnswer()">Check answer</button>':'<button class="primary" onclick="nextQuestion()">'+(index===quiz.length-1?'See score':'Next question →')+'</button>'}</div>`;
+}
+function chooseAnswer(value){if(checked)return;answers[index]=value;render();}
+function checkAnswer(){if(answers[index]===undefined){$('feedback').textContent='Choose an answer first!';return;}checked=true;render();}
+function nextQuestion(){index++;checked=false;render();}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+$('createBtn').addEventListener('click',createQuiz);
+$('resetBtn').addEventListener('click',()=>{index=0;answers={};checked=false;if(quiz.length)render();});
+$('theme').addEventListener('change',applyTheme);
+applyTheme();
+</script>
+</body>
+</html>
